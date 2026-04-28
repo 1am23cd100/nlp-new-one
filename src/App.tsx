@@ -51,8 +51,9 @@ export default function App() {
       console.error("Translation Error:", error);
       let errorMessage = error.message || "An unexpected error occurred.";
       
-      if (errorMessage.toLowerCase().includes("api_key") || errorMessage.toLowerCase().includes("missing")) {
-        errorMessage = "Gemini API key is missing or invalid on the server. Please check project secrets.";
+      const lowerError = errorMessage.toLowerCase();
+      if (lowerError.includes("api_key") || lowerError.includes("missing") || lowerError.includes("unauthorized")) {
+        errorMessage = "Gemini API key is invalid or not configured. Please check 'Settings > Secrets' (Name: GEMINI_API_KEY).";
       }
       
       setOutput(`Error: ${errorMessage}`);
