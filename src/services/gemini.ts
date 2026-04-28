@@ -1,48 +1,28 @@
+
 import { GoogleGenAI } from "@google/genai";
 
-let aiInstance: GoogleGenAI | null = null;
-
-function getAI() {
-  if (!aiInstance) {
-    const key = process.env.GEMINI_API_KEY;
-    if (!key) {
-      throw new Error("GEMINI_API_KEY is not configured. Please add the API key to use translation features.");
-    }
-    aiInstance = new GoogleGenAI({ apiKey: key });
-  }
-  return aiInstance;
-}
+// AI Studio injects GEMINI_API_KEY into process.env at runtime.
+// Vite maps this via 'define' in vite.config.ts.
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export async function translateText(text: string, targetLanguage: string) {
-  const ai = getAI();
-  const model = ai.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    systemInstruction: "You are a professional translator. Your task is to translate the provided text into the target language. You must provide ONLY the translated text. Do not include quotes, preamble, notes, or any other text.",
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: `Translate the following text to ${targetLanguage}. Return ONLY the translated text. Do not include any introductory sentences, quotes, or explanations: \n\n${text}`,
   });
-
-  const prompt = `Target Language: ${targetLanguage}\n\nText to translate:\n${text}`;
   
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const translatedText = response.text();
-
-  if (!translatedText) {
+  if (!response.text) {
     throw new Error("Translation failed: The AI returned an empty response.");
   }
   
-  return translatedText.trim();
+  return response.text.trim();
 }
 
 export async function detectLanguage(text: string) {
-  const ai = getAI();
-  const model = ai.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    systemInstruction: "Identify the language of the provided text. Return ONLY the name of the language. If unknown, return 'Unknown'. No other text permitted.",
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: `Identify the language of the following text. Return ONLY the name of the language (e.g., 'English', 'French', 'Kannada'). If you cannot identify it, return 'Unknown': \n\n${text}`,
   });
 
-  const result = await model.generateContent(text);
-  const response = await result.response;
-  const lang = response.text();
-
-  return lang ? lang.trim() : "Unknown";
+  return response.text?.trim() || "Unknown";
 }

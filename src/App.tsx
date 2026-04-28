@@ -50,8 +50,15 @@ export default function App() {
       setOutput(cleanResult);
     } catch (error: any) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'Module timeout or connection failure.';
-      setOutput(`Error: ${errorMessage}. Please check your connection and try again.`);
+      let errorMessage = "Translation module encountered an unexpected state.";
+      
+      if (!process.env.GEMINI_API_KEY || error?.message?.includes("API_KEY_INVALID") || error?.message?.includes("not configured")) {
+        errorMessage = "GEMINI_API_KEY is not configured. Please add your API key in the 'Settings' menu under the 'Secrets' tab to enable AI features.";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      setOutput(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -63,8 +70,12 @@ export default function App() {
     try {
       const lang = await detectLanguage(inputText);
       setDetectedLang(lang);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      if (!process.env.GEMINI_API_KEY) {
+        // Silent failure or helpful log for detection
+        console.warn("Detection failed likely due to missing GEMINI_API_KEY");
+      }
     } finally {
       setDetecting(false);
     }
