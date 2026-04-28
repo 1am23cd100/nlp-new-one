@@ -45,27 +45,14 @@ export default function App() {
     setOutput(null);
     try {
       const result = await translateText(inputText, targetLang);
-      // Clean up common LLM artifacts like surrounding quotes
       const cleanResult = result.trim().replace(/^["'](.*)["']$/s, '$1');
       setOutput(cleanResult);
     } catch (error: any) {
       console.error("Translation Error:", error);
-      let errorMessage = "Translation module encountered an unexpected state.";
+      let errorMessage = error.message || "An unexpected error occurred.";
       
-      const getApiKey = () => {
-        try {
-          return process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
-        } catch {
-          return (import.meta as any).env.VITE_GEMINI_API_KEY;
-        }
-      };
-
-      const isMissingKey = !getApiKey();
-
-      if (isMissingKey || error?.message?.toLowerCase().includes("api key") || error?.message?.toLowerCase().includes("unauthorized") || error?.message?.toLowerCase().includes("missing")) {
-        errorMessage = "Gemini API key is invalid or not configured. Please ensure it's set in the 'Secrets' tab of settings (Name: GEMINI_API_KEY) or as VITE_GEMINI_API_KEY for external deployments.";
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
+      if (errorMessage.toLowerCase().includes("api_key") || errorMessage.toLowerCase().includes("missing")) {
+        errorMessage = "Gemini API key is missing or invalid on the server. Please check project secrets.";
       }
       
       setOutput(`Error: ${errorMessage}`);
