@@ -52,8 +52,8 @@ export default function App() {
       console.error(error);
       let errorMessage = "Translation module encountered an unexpected state.";
       
-      if (!process.env.GEMINI_API_KEY || error?.message?.includes("API_KEY_INVALID") || error?.message?.includes("not configured")) {
-        errorMessage = "GEMINI_API_KEY is not configured. Please add your API key in the 'Settings' menu under the 'Secrets' tab to enable AI features.";
+      if (error?.message?.toLowerCase().includes("api key") || error?.message?.toLowerCase().includes("unauthorized")) {
+        errorMessage = "Gemini API key is invalid or not configured. Please ensure it's set in the 'Secrets' tab of settings.";
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
@@ -71,11 +71,7 @@ export default function App() {
       const lang = await detectLanguage(inputText);
       setDetectedLang(lang);
     } catch (error: any) {
-      console.error(error);
-      if (!process.env.GEMINI_API_KEY) {
-        // Silent failure or helpful log for detection
-        console.warn("Detection failed likely due to missing GEMINI_API_KEY");
-      }
+      console.error("Detection Error:", error);
     } finally {
       setDetecting(false);
     }
